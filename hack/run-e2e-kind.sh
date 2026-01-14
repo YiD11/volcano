@@ -105,7 +105,8 @@ case ${E2E_TYPE} in
   --namespace ${NAMESPACE} \
   --kubeconfig ${KUBECONFIG} \
   --values - \
-  --wait
+  --wait \
+  --timeout 10m
 basic:
   image_pull_policy: IfNotPresent
   image_tag_version: ${TAG}
@@ -150,7 +151,8 @@ EOF
   --namespace ${NAMESPACE} \
   --kubeconfig ${KUBECONFIG} \
   --values - \
-  --wait
+  --wait \
+  --timeout 10m
 basic:
   image_pull_policy: IfNotPresent
   image_tag_version: ${TAG}
@@ -195,7 +197,8 @@ EOF
   --namespace ${NAMESPACE} \
   --kubeconfig ${KUBECONFIG} \
   --values - \
-  --wait
+  --wait \
+  --timeout 10m
 basic:
   image_pull_policy: IfNotPresent
   image_tag_version: ${TAG}

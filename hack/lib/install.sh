@@ -92,10 +92,23 @@ function install-helm {
 
 function install-ginkgo-if-not-exist {
   echo "Checking ginkgo"
+  
+  # Ensure GOPATH/bin and GOROOT/bin are in PATH
+  if [[ -n "${GOPATH}" ]]; then
+    export PATH="${GOPATH}/bin:${PATH}"
+  else
+    export PATH="${HOME}/go/bin:${PATH}"
+  fi
+  
+  if [[ -n "${GOROOT}" ]]; then
+    export PATH="${GOROOT}/bin:${PATH}"
+  fi
+  
   which ginkgo >/dev/null 2>&1
   if [[ $? -ne 0 ]]; then
     echo "Installing ginkgo ..."
     GOOS=${OS} go install github.com/onsi/ginkgo/v2/ginkgo
+    echo "ginkgo installed to: $(which ginkgo 2>/dev/null || echo '${GOPATH}/bin/ginkgo or ${HOME}/go/bin/ginkgo')"
   else
     echo -n "Found ginkgo, version: " && ginkgo version
   fi

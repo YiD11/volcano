@@ -14,6 +14,7 @@
 
 ARG OPEN_EULER_IMAGE_TAG
 ARG BWM_RPM_NAME
+ARG APK_MIRROR
 
 FROM golang:1.24.0 AS builder
 WORKDIR /go/src/volcano.sh/
@@ -29,7 +30,14 @@ RUN yum install -y cpio && \
     rpm2cpio $(ls | grep oncn-bwm) | cpio -div
 
 FROM alpine:latest
-RUN apk add sudo libcap
+ARG APK_MIRROR
+RUN if [ -n "$APK_MIRROR" ]; then \
+        sed -i "s|https://dl-cdn.alpinelinux.org|${APK_MIRROR}|g" /etc/apk/repositories && \
+        apk update && \
+        apk add --no-cache sudo libcap; \
+    else \
+        apk add --no-cache sudo libcap; \
+    fi
 COPY --from=builder /go/src/volcano.sh/volcano/_output/bin/vc-agent /vc-agent
 COPY --from=builder /go/src/volcano.sh/volcano/_output/bin/network-qos \
                     /go/src/volcano.sh/volcano/installer/build/volcano-agent/install.sh /usr/local/bin/

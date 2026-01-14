@@ -20,5 +20,10 @@ ADD . volcano
 RUN cd volcano && make vc-controller-manager
 
 FROM alpine:latest
+ARG APK_MIRROR
+RUN if [ -n "$APK_MIRROR" ]; then \
+        sed -i "s|https://dl-cdn.alpinelinux.org|${APK_MIRROR}|g" /etc/apk/repositories && \
+        apk update; \
+    fi
 COPY --from=builder /go/src/volcano.sh/volcano/_output/bin/vc-controller-manager /vc-controller-manager
 ENTRYPOINT ["/vc-controller-manager"]

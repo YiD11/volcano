@@ -23,14 +23,18 @@ FROM alpine:latest
 ARG KUBE_VERSION="1.32.0"
 ARG TARGETARCH
 ARG APK_MIRROR
-RUN if [[ -n "$APK_MIRROR" ]]; then sed -i "s@https://dl-cdn.alpinelinux.org@${APK_MIRROR}@g" /etc/apk/repositories ; fi && \
-    apk add --update ca-certificates && \
-    apk add --update openssl && \
-    apk add --update -t deps curl && \
+
+# Configure APK mirror if provided
+RUN if [ -n "$APK_MIRROR" ]; then \
+        sed -i "s|https://dl-cdn.alpinelinux.org|${APK_MIRROR}|g" /etc/apk/repositories; \
+    fi
+
+# Install required packages (openssl and kubectl are needed by gen-admission-secret.sh)
+RUN apk update && \
+    apk add --no-cache ca-certificates openssl curl && \
     curl -L https://dl.k8s.io/release/v$KUBE_VERSION/bin/linux/$TARGETARCH/kubectl -o /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl && \
-    apk del --purge deps && \
-    rm /var/cache/apk/*
+    rm -rf /var/cache/apk/*
 
 COPY --from=builder /go/src/volcano.sh/volcano/_output/bin/vc-webhook-manager /vc-webhook-manager
 ADD ./installer/dockerfile/webhook-manager/gen-admission-secret.sh /gen-admission-secret.sh

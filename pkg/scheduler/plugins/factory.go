@@ -46,6 +46,7 @@ import (
 	"volcano.sh/volcano/pkg/scheduler/plugins/sla"
 	tasktopology "volcano.sh/volcano/pkg/scheduler/plugins/task-topology"
 	"volcano.sh/volcano/pkg/scheduler/plugins/tdm"
+	"volcano.sh/volcano/pkg/scheduler/plugins/timepriority"
 	"volcano.sh/volcano/pkg/scheduler/plugins/usage"
 )
 
@@ -72,6 +73,7 @@ func init() {
 	framework.RegisterPluginBuilder(pdb.PluginName, pdb.New)
 	framework.RegisterPluginBuilder(nodegroup.PluginName, nodegroup.New)
 	framework.RegisterPluginBuilder(networktopologyaware.PluginName, networktopologyaware.New)
+	framework.RegisterPluginBuilder(timepriority.PluginName, timepriority.New)
 
 	// Plugins for Queues
 	framework.RegisterPluginBuilder(proportion.PluginName, proportion.New)

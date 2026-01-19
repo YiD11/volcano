@@ -32,6 +32,7 @@ import (
 	"volcano.sh/volcano/pkg/scheduler/api"
 	"volcano.sh/volcano/pkg/scheduler/framework"
 	"volcano.sh/volcano/pkg/scheduler/plugins/util"
+	"volcano.sh/volcano/pkg/scheduler/plugins/util/priority"
 )
 
 // PluginName indicates name of volcano scheduler plugin.
@@ -51,12 +52,12 @@ const (
 
 // Config holds the plugin configuration
 type Config struct {
-	SortOrder               []string          `json:"sortOrder"`
-	Preemptible             *PrioritySelector `json:"preemptible"`
-	Reclaimable             *PrioritySelector `json:"reclaimable"`
-	Blocking                *PrioritySelector `json:"blocking"`      // priority range that can cause head-of-line blocking
-	BlockingScope           string            `json:"blockingScope"` // "cluster" or "queue" (default: "queue")
-	MaxRunTimeAnnotationKey string            `json:"maxRunTimeAnnotationKey"`
+	SortOrder               []string                   `json:"sortOrder"`
+	Preemptible             *priority.PrioritySelector `json:"preemptible"`
+	Reclaimable             *priority.PrioritySelector `json:"reclaimable"`
+	Blocking                *priority.PrioritySelector `json:"blocking"`      // priority range that can cause head-of-line blocking
+	BlockingScope           string                     `json:"blockingScope"` // "cluster" or "queue" (default: "queue")
+	MaxRunTimeAnnotationKey string                     `json:"maxRunTimeAnnotationKey"`
 }
 
 // exPriorityPlugin is the extended priority plugin
@@ -90,19 +91,19 @@ func (ep *exPriorityPlugin) parseArguments() {
 	}
 
 	// Parse preemptible
-	if preemptible, ok := framework.Get[PrioritySelector](ep.pluginArguments, "preemptible"); ok {
+	if preemptible, ok := framework.Get[priority.PrioritySelector](ep.pluginArguments, "preemptible"); ok {
 		ep.config.Preemptible = &preemptible
 		klog.V(4).Infof("ex-priority plugin preemptible: %+v", ep.config.Preemptible)
 	}
 
 	// Parse reclaimable
-	if reclaimable, ok := framework.Get[PrioritySelector](ep.pluginArguments, "reclaimable"); ok {
+	if reclaimable, ok := framework.Get[priority.PrioritySelector](ep.pluginArguments, "reclaimable"); ok {
 		ep.config.Reclaimable = &reclaimable
 		klog.V(4).Infof("ex-priority plugin reclaimable: %+v", ep.config.Reclaimable)
 	}
 
 	// Parse blocking
-	if blocking, ok := framework.Get[PrioritySelector](ep.pluginArguments, "blocking"); ok {
+	if blocking, ok := framework.Get[priority.PrioritySelector](ep.pluginArguments, "blocking"); ok {
 		ep.config.Blocking = &blocking
 		klog.V(4).Infof("ex-priority plugin blocking: %+v", ep.config.Blocking)
 	}

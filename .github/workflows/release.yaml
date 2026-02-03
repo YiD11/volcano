@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   docker:
+    if: ${{ github.repository_owner == 'volcano-sh' }}
     runs-on: ubuntu-latest
     env:
       GOPATH: /home/runner/work/${{ github.repository }}

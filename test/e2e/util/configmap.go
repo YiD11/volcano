@@ -83,7 +83,7 @@ func (c *ConfigMapCase) UndoChanged() error {
 		c.ocm.Data[filename] = old
 	}
 	atLeast := time.Second // at least 1s wait between 2 configmap-change
-	if dur := time.Now().Sub(c.startTs); dur < atLeast {
+	if dur := time.Since(c.startTs); dur < atLeast {
 		time.Sleep(atLeast - dur)
 	}
 	cm, err := KubeClient.CoreV1().ConfigMaps(c.NameSpace).Update(context.TODO(), c.ocm, metav1.UpdateOptions{})
@@ -102,7 +102,7 @@ func (c *ConfigMapCase) UndoChanged() error {
 }
 
 func ModifySchedulerConfig(data map[string]string, modifier func(*SchedulerConfiguration) bool) (changed bool, changedBefore map[string]string) {
-	vcScheConfStr, ok := data["volcano-scheduler-ci.conf"]
+	vcScheConfStr, ok := data["volcano-scheduler.conf"]
 	gomega.Expect(ok).To(gomega.BeTrue())
 
 	schedulerConf := &SchedulerConfiguration{}
@@ -118,8 +118,8 @@ func ModifySchedulerConfig(data map[string]string, modifier func(*SchedulerConfi
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 	changedBefore = make(map[string]string)
-	changedBefore["volcano-scheduler-ci.conf"] = vcScheConfStr
-	data["volcano-scheduler-ci.conf"] = string(newVCScheConfBytes)
+	changedBefore["volcano-scheduler.conf"] = vcScheConfStr
+	data["volcano-scheduler.conf"] = string(newVCScheConfBytes)
 	return
 }
 
@@ -156,7 +156,7 @@ type Configuration struct {
 	// Name is name of action
 	Name string `yaml:"name"`
 	// Arguments defines the different arguments that can be given to specified action
-	Arguments map[string]string `yaml:"arguments,omitempty"`
+	Arguments map[string]interface{} `yaml:"arguments,omitempty"`
 }
 
 // PluginOption defines the options of plugin
@@ -198,5 +198,5 @@ type PluginOption struct {
 	// EnabledJobStarving defines whether jobStarvingFn is enabled
 	EnabledJobStarving *bool `yaml:"enableJobStarving,omitempty"`
 	// Arguments defines the different arguments that can be given to different plugins
-	Arguments map[string]string `yaml:"arguments,omitempty"`
+	Arguments map[string]interface{} `yaml:"arguments,omitempty"`
 }

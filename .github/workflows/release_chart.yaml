@@ -7,6 +7,7 @@ on:
 
 jobs:
   release-charts:
+    if: ${{ github.repository_owner == 'volcano-sh' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

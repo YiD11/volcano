@@ -19,6 +19,7 @@ env:
 
 jobs:
   sync-apis:
+    if: ${{ github.repository_owner == 'volcano-sh' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

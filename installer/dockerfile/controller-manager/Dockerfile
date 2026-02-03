@@ -15,6 +15,7 @@
 FROM golang:1.24.0 AS builder
 WORKDIR /go/src/volcano.sh/
 COPY go.mod go.sum ./
+COPY staging/ ./staging/
 # Copy staging directory before go mod download since go.mod has replace directive
 COPY staging/ ./staging/
 RUN go mod download

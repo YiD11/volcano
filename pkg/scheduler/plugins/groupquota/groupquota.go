@@ -28,6 +28,12 @@ import (
 // PluginName indicates name of volcano scheduler plugin.
 const PluginName = "groupquota"
 
+const (
+	defaultAnnotationKey = "volcano.sh/groupquota"
+	annotationKeyArg     = "annotationKey"
+	resourceMapArg       = "resourceMap"
+)
+
 type groupquotaPlugin struct {
 	// Arguments given for the plugin
 	pluginArguments framework.Arguments
@@ -43,8 +49,8 @@ func (gp *groupquotaPlugin) Name() string {
 }
 
 func (gp *groupquotaPlugin) OnSessionOpen(ssn *framework.Session) {
-	annotationKey := "example.com/group"
-	if arg, ok := gp.pluginArguments["annotationKey"]; ok {
+	annotationKey := defaultAnnotationKey
+	if arg, ok := gp.pluginArguments[annotationKeyArg]; ok {
 		if val, ok := arg.(string); ok {
 			annotationKey = val
 		}
@@ -53,39 +59,8 @@ func (gp *groupquotaPlugin) OnSessionOpen(ssn *framework.Session) {
 	}
 
 	quota := v1.ResourceList{}
-	if rm, ok := gp.pluginArguments["resourceMap"]; ok {
-		if resMap, ok := rm.(map[interface{}]interface{}); ok {
-			for k, v := range resMap {
-				kStr, okK := k.(string)
-				vStr, okV := v.(string)
-				if !okK || !okV {
-					klog.Warningf("groupquota plugin: resourceMap key/value is not string, skipping %v: %v", k, v)
-					continue
-				}
-				q, err := resource.ParseQuantity(vStr)
-				if err != nil {
-					klog.Errorf("groupquota plugin: failed to parse quantity for %s: %v", kStr, err)
-					continue
-				}
-				quota[v1.ResourceName(kStr)] = q
-			}
-		} else if resMap, ok := rm.(map[string]interface{}); ok {
-			for k, v := range resMap {
-				vStr, ok := v.(string)
-				if !ok {
-					klog.Warningf("groupquota plugin: resourceMap value for %s is not string, skipping", k)
-					continue
-				}
-				q, err := resource.ParseQuantity(vStr)
-				if err != nil {
-					klog.Errorf("groupquota plugin: failed to parse quantity for %s: %v", k, err)
-					continue
-				}
-				quota[v1.ResourceName(k)] = q
-			}
-		} else {
-			klog.Warningf("groupquota plugin: resourceMap is not a map, got %T", rm)
-		}
+	if rm, ok := gp.pluginArguments[resourceMapArg]; ok {
+		quota = parseQuotaResourceList(rm)
 	}
 
 	groupUsage := make(map[string]v1.ResourceList)
@@ -183,9 +158,58 @@ func addResourceList(list v1.ResourceList, res *api.Resource) {
 	for name, val := range res.ScalarResources {
 		rName := v1.ResourceName(name)
 		q := list[rName]
-		q.Add(*resource.NewQuantity(int64(val), resource.DecimalSI))
+		q.Add(*resource.NewMilliQuantity(int64(val), resource.DecimalSI))
 		list[rName] = q
 	}
+}
+
+func parseQuotaResourceList(raw interface{}) v1.ResourceList {
+	quota := v1.ResourceList{}
+
+	switch resMap := raw.(type) {
+	case map[interface{}]interface{}:
+		for k, v := range resMap {
+			kStr, okK := k.(string)
+			vStr, okV := v.(string)
+			if !okK || !okV {
+				klog.Warningf("groupquota plugin: resourceMap key/value is not string, skipping %v: %v", k, v)
+				continue
+			}
+			q, err := resource.ParseQuantity(vStr)
+			if err != nil {
+				klog.Errorf("groupquota plugin: failed to parse quantity for %s: %v", kStr, err)
+				continue
+			}
+			quota[v1.ResourceName(kStr)] = q
+		}
+	case map[string]interface{}:
+		for k, v := range resMap {
+			vStr, ok := v.(string)
+			if !ok {
+				klog.Warningf("groupquota plugin: resourceMap value for %s is not string, skipping", k)
+				continue
+			}
+			q, err := resource.ParseQuantity(vStr)
+			if err != nil {
+				klog.Errorf("groupquota plugin: failed to parse quantity for %s: %v", k, err)
+				continue
+			}
+			quota[v1.ResourceName(k)] = q
+		}
+	case map[string]string:
+		for k, v := range resMap {
+			q, err := resource.ParseQuantity(v)
+			if err != nil {
+				klog.Errorf("groupquota plugin: failed to parse quantity for %s: %v", k, err)
+				continue
+			}
+			quota[v1.ResourceName(k)] = q
+		}
+	default:
+		klog.Warningf("groupquota plugin: resourceMap is not a map, got %T", raw)
+	}
+
+	return quota
 }
 
 func isOverQuota(usage, quota v1.ResourceList) bool {
